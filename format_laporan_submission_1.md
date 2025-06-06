@@ -69,11 +69,75 @@ Berikut adalah deskripsi singkat fitur:
 
 
 ## Data Preparation
-1. Handling Missing Values: Isi missing values dengan median
-2. Feature Engineering: Buat fitur baru TenureYears dari tenure
-3. Encoding Kategorikal: Lakukan one-hot encoding untuk kolom kategorikal
-4. Train-Test Split: Pisahkan 80% training dan 20% test data
+Tahap ini mencakup proses transformasi data mentah menjadi bentuk yang siap digunakan untuk pelatihan model machine learning. Berikut adalah langkah-langkah yang dilakukan:
 
+---
+
+### 🔹 1. **Transform Tipe Data**
+
+* Dilakukan konversi kolom `TotalCharges` dari tipe `object` ke `float` menggunakan `pd.to_numeric(errors='coerce')`.
+
+```python
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+```
+
+---
+
+### 🔹 2. **Handling Missing Values**
+
+* Awalnya, dataset tidak memiliki missing value eksplisit (`df.isnull().sum()` menunjukkan 0 pada semua kolom).
+* Namun, setelah dilakukan konversi kolom `TotalCharges`, sebanyak **11 nilai menjadi `NaN`** karena berisi spasi atau string kosong.
+* Missing value ini kemudian ditangani dengan cara **mengisi nilai yang hilang menggunakan median** dari kolom `TotalCharges`. Penggunaan median dipilih karena lebih tahan terhadap outlier dibandingkan mean.
+
+```python
+df['TotalCharges'].fillna(df['TotalCharges'].median(), inplace=True)
+```
+
+---
+
+### 🔹 3. **Drop Kolom Tidak Relevan**
+
+* Kolom `customerID` dihapus karena merupakan **identifier unik** yang tidak memiliki nilai prediktif dalam klasifikasi churn.
+
+```python
+df.drop(columns=['customerID'], inplace=True)
+```
+
+---
+
+### 🔹 4. **Encoding Kategorikal**
+
+* Untuk dapat digunakan dalam pemodelan, fitur kategorikal perlu diubah ke format numerik.
+* Encoding dilakukan dengan pendekatan **label encoding**, mengubah kategori ke nilai 0/1/2/dst. secara eksplisit, terutama untuk fitur-fitur biner seperti `gender`, `Partner`, `Dependents`, `PaperlessBilling`, dan lainnya.
+
+```python
+# Encode fitur kategorikal
+df['gender'] = df['gender'].map({'Female': 1, 'Male': 0})
+df['Partner'] = df['Partner'].map({'Yes': 1, 'No': 0})
+df['Dependents'] = df['Dependents'].map({'Yes': 1, 'No': 0})
+df['PhoneService'] = df['PhoneService'].map({'Yes': 1, 'No': 0})
+df['MultipleLines'] = df['MultipleLines'].map({'Yes': 2, 'No': 1, 'No phone service': 0})
+df['InternetService'] = df['InternetService'].map({'DSL': 2, 'Fiber optic': 1, 'No': 0})
+df['OnlineSecurity'] = df['OnlineSecurity'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['OnlineBackup'] = df['OnlineBackup'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['DeviceProtection'] = df['DeviceProtection'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['TechSupport'] = df['TechSupport'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['StreamingTV'] = df['StreamingTV'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['StreamingMovies'] = df['StreamingMovies'].map({'Yes': 2, 'No': 1, 'No internet service': 0})
+df['Contract'] = df['Contract'].map({'Two year': 2, 'One year': 1, 'Month-to-month': 0})
+df['PaymentMethod'] = df['PaymentMethod'].map({'Bank transfer (automatic)':3, 'Credit card (automatic)': 2, 'Mailed check': 1, 'Electronic check': 0})
+df['PaperlessBilling'] = df['PaperlessBilling'].map({'Yes': 1, 'No': 0})
+df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
+```
+
+---
+
+### 🔹 4. **Feature Selection dan Final Dataset**
+
+* Dataset akhir yang digunakan untuk pelatihan model terdiri atas kombinasi fitur numerik dan hasil encoding fitur kategorikal.
+* Kolom target yang diprediksi adalah `Churn`.
+
+---
 
 
 ## Modeling
@@ -113,13 +177,6 @@ model.fit(X_train, y_train)
 ```
 
 Setelah pelatihan, model digunakan untuk memprediksi data uji (`X_test`) dan dilakukan evaluasi performa menggunakan metrik klasifikasi seperti **accuracy**, **precision**, **recall**, dan **f1-score**.
-
----
-
-### ✨ Catatan Tambahan:
-
-Random Forest juga memberikan nilai **feature importance** yang dapat digunakan untuk mengetahui fitur mana yang paling berpengaruh terhadap prediksi churn. Hasil menunjukkan bahwa fitur-fitur seperti `Contract`, `tenure`, `PaymentMethod`, dan `MonthlyCharges` termasuk yang paling berkontribusi dalam memprediksi churn.
-
 
 ## Evaluation
 A. Metrik Evaluasi yang Digunakan
