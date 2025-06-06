@@ -77,9 +77,48 @@ Berikut adalah deskripsi singkat fitur:
 
 
 ## Modeling
-Random Forest:
-Kelebihan: Handles nonlinear relationships, feature importance
-Kekurangan: Cenderung overfit tanpa tuning
+
+Model yang digunakan dalam proyek ini adalah **Random Forest Classifier**, yaitu algoritma ensemble berbasis decision tree yang sangat populer dalam klasifikasi dan regresi.
+
+### 🔍 Cara Kerja Algoritma Random Forest:
+
+Random Forest bekerja dengan membangun **banyak pohon keputusan (decision trees)** pada subset acak dari data pelatihan, lalu menggabungkan hasil prediksi dari masing-masing pohon (melalui voting mayoritas untuk klasifikasi) untuk menghasilkan prediksi akhir. Proses ini dikenal sebagai **bagging (Bootstrap Aggregating)**, di mana setiap pohon:
+
+* Dilatih dengan data yang di-*sampling* secara acak dengan pengembalian (bootstrapping).
+* Pada setiap node, hanya subset acak dari fitur yang dipertimbangkan untuk split, sehingga meningkatkan keberagaman antar pohon.
+
+**Keuntungan utama** Random Forest adalah:
+
+* Lebih tahan terhadap **overfitting** dibanding single decision tree.
+* Mampu menangani fitur kategorikal dan numerik secara bersamaan.
+* Memberikan estimasi **feature importance**, yang berguna untuk interpretasi model.
+
+---
+
+### ⚙️ Parameter Model yang Digunakan
+
+Model dibangun menggunakan **`RandomForestClassifier` dari library `sklearn.ensemble`** dengan parameter sebagai berikut:
+
+* `random_state=42`: Digunakan untuk memastikan hasil model dapat **direproduksi**. Nilai 42 dipilih secara arbitrer namun umum digunakan sebagai nilai acuan.
+* Parameter lainnya seperti `n_estimators`, `max_depth`, dan sebagainya menggunakan nilai **default** dari scikit-learn.
+
+```python
+model = RandomForestClassifier(random_state=42)
+```
+
+Model dilatih pada data pelatihan (`X_train`, `y_train`) menggunakan:
+
+```python
+model.fit(X_train, y_train)
+```
+
+Setelah pelatihan, model digunakan untuk memprediksi data uji (`X_test`) dan dilakukan evaluasi performa menggunakan metrik klasifikasi seperti **accuracy**, **precision**, **recall**, dan **f1-score**.
+
+---
+
+### ✨ Catatan Tambahan:
+
+Random Forest juga memberikan nilai **feature importance** yang dapat digunakan untuk mengetahui fitur mana yang paling berpengaruh terhadap prediksi churn. Hasil menunjukkan bahwa fitur-fitur seperti `Contract`, `tenure`, `PaymentMethod`, dan `MonthlyCharges` termasuk yang paling berkontribusi dalam memprediksi churn.
 
 
 ## Evaluation
