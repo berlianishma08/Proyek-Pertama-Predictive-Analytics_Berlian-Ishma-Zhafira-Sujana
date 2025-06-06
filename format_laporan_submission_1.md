@@ -4,21 +4,51 @@
 
 Customer churn merupakan tantangan kritis di industri telekomunikasi dengan dampak finansial signifikan. Menurut penelitian Reichheld, F.F. dan Sasser, W.E. (1990), peningkatan 5% dalam customer retention dapat meningkatkan profitabilitas sebesar 25-95%. Dataset Telco Customer Churn dari Kaggle ini merekam karakteristik 7,043 pelanggan dengan 21 fitur yang mencakup demografi, layanan yang digunakan, dan riwayat pembayaran.
 
+---
+
 ## Business Understanding
+
 ### Problem Statements
-1. Tingkat churn pelanggan mencapai 26.5% dari total dataset
-2. Perusahaan kesulitan mengidentifikasi pelanggan berisiko churn secara dini
-3. Ketidakseimbangan kelas (class imbalance) antara churn dan non-churn
+
+1. **Tingkat churn pelanggan mencapai 26.5%** dari total pelanggan, yang berdampak signifikan terhadap pendapatan dan pertumbuhan perusahaan.
+2. **Perusahaan mengalami kesulitan dalam mengidentifikasi pelanggan yang berisiko churn secara dini**, sehingga sering terlambat dalam memberikan strategi retensi.
+3. **Data bersifat imbalanced**, dengan distribusi kelas `Churn = No` sebanyak \~73% dan `Churn = Yes` sebanyak \~27%, yang menyebabkan risiko bias pada model terhadap kelas mayoritas.
+
+---
 
 ### Goals
-1. Membangun model prediktif dengan recall >80% untuk kelas churn
-2. Mengidentifikasi faktor dominan penyebab churn
-3. Mengurangi false negative untuk meminimalkan pelanggan berisiko yang terlewat
 
-### Solution statements
-1. Mengimplementasikan Random Forest dengan class weighting
-2. Mengevaluasi performa XGBoost dengan SMOTE untuk handling imbalance
-3. Hyperparameter tuning menggunakan GridSearchCV
+1. **Membangun model prediksi churn pelanggan** yang dapat mengklasifikasikan apakah pelanggan berpotensi churn atau tidak.
+2. **Mengidentifikasi fitur-fitur utama** yang paling berpengaruh terhadap kemungkinan pelanggan melakukan churn, seperti `Contract`, `tenure`, `MonthlyCharges`, dan `PaymentMethod`.
+
+---
+
+### Solution Statements
+
+1.  **Menggunakan algoritma Random Forest Classifier** sebagai model utama dalam prediksi customer churn.
+
+   * Random Forest dipilih karena mampu menangani data dengan kombinasi fitur numerik dan kategorikal (setelah dilakukan encoding).
+
+2.  **Melakukan feature selection dan encoding** terhadap fitur-fitur penting dari dataset.
+
+   * Fitur yang memuat numerik dikonversi ke tipe data numerik (float/integer).
+   * Kolom kategorikal  `gender`, `Partner`, `Dependents`, `PhoneService`, `MultipleLines`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`, `Contract`, `PaperlessBilling`, dan `PaymentMethod` diencode menggunakan **categorical encoding**.
+
+3.  **Mengukur kontribusi setiap fitur terhadap prediksi churn menggunakan feature importance dari Random Forest**.
+
+   * Hasil feature importance divisualisasikan dalam bentuk bar chart.
+
+---
+
+###  Metrik Evaluasi yang Digunakan
+
+Model dievaluasi menggunakan metrik berikut:
+
+* **Precision**: Menilai seberapa akurat model dalam memprediksi pelanggan churn.
+* **Recall**: Fokus utama karena ingin mendeteksi sebanyak mungkin pelanggan yang berisiko churn.
+* **F1-score**: Untuk mengukur keseimbangan antara precision dan recall.
+* **Accuracy**: Metrik keseluruhan, namun tidak dijadikan tolok ukur utama karena data bersifat imbalanced.
+
 
 ## Data Understanding
 Sumber Dataset: [Telco Customer Churn] - (https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download)
@@ -54,7 +84,7 @@ Berikut adalah deskripsi singkat fitur:
 - `TotalCharges`: Total biaya selama menjadi pelanggan
 - `Churn`: Target (Yes/No) — apakah pelanggan berhenti berlangganan
 
-### 🔍 Exploratory Data Analysis (EDA):
+###  Exploratory Data Analysis (EDA):
 
 * **Tidak ada nilai kosong (missing values)** pada sebagian besar kolom berdasarkan hasil `df.isnull().sum()`. Namun, kolom `TotalCharges` bertipe `object` meskipun berisi angka. Setelah dikonversi ke `float`, ditemukan **11 nilai NaN**, yang akan ditangani pada tahap data preparation.
 * **Tidak terdapat duplikat** dalam data.
@@ -73,7 +103,7 @@ Tahap ini mencakup proses transformasi data mentah menjadi bentuk yang siap digu
 
 ---
 
-### 🔹 1. **Transform Tipe Data**
+###  1. **Transform Tipe Data**
 
 * Dilakukan konversi kolom `TotalCharges` dari tipe `object` ke `float` menggunakan `pd.to_numeric(errors='coerce')`.
 
@@ -83,7 +113,7 @@ df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 
 ---
 
-### 🔹 2. **Handling Missing Values**
+###  2. **Handling Missing Values**
 
 * Awalnya, dataset tidak memiliki missing value eksplisit (`df.isnull().sum()` menunjukkan 0 pada semua kolom).
 * Namun, setelah dilakukan konversi kolom `TotalCharges`, sebanyak **11 nilai menjadi `NaN`** karena berisi spasi atau string kosong.
@@ -95,7 +125,7 @@ df['TotalCharges'].fillna(df['TotalCharges'].median(), inplace=True)
 
 ---
 
-### 🔹 3. **Drop Kolom Tidak Relevan**
+###  3. **Drop Kolom Tidak Relevan**
 
 * Kolom `customerID` dihapus karena merupakan **identifier unik** yang tidak memiliki nilai prediktif dalam klasifikasi churn.
 
@@ -105,7 +135,7 @@ df.drop(columns=['customerID'], inplace=True)
 
 ---
 
-### 🔹 4. **Encoding Kategorikal**
+###  4. **Encoding Kategorikal**
 
 * Untuk dapat digunakan dalam pemodelan, fitur kategorikal perlu diubah ke format numerik.
 * Encoding dilakukan dengan pendekatan **label encoding**, mengubah kategori ke nilai 0/1/2/dst. secara eksplisit, terutama untuk fitur-fitur biner seperti `gender`, `Partner`, `Dependents`, `PaperlessBilling`, dan lainnya.
@@ -132,7 +162,7 @@ df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 
 ---
 
-### 🔹 4. **Feature Selection dan Final Dataset**
+###  4. **Feature Selection dan Final Dataset**
 
 * Dataset akhir yang digunakan untuk pelatihan model terdiri atas kombinasi fitur numerik dan hasil encoding fitur kategorikal.
 * Kolom target yang diprediksi adalah `Churn`.
@@ -144,7 +174,7 @@ df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 
 Model yang digunakan dalam proyek ini adalah **Random Forest Classifier**, yaitu algoritma ensemble berbasis decision tree yang sangat populer dalam klasifikasi dan regresi.
 
-### 🔍 Cara Kerja Algoritma Random Forest:
+###  Cara Kerja Algoritma Random Forest:
 
 Random Forest bekerja dengan membangun **banyak pohon keputusan (decision trees)** pada subset acak dari data pelatihan, lalu menggabungkan hasil prediksi dari masing-masing pohon (melalui voting mayoritas untuk klasifikasi) untuk menghasilkan prediksi akhir. Proses ini dikenal sebagai **bagging (Bootstrap Aggregating)**, di mana setiap pohon:
 
@@ -159,7 +189,7 @@ Random Forest bekerja dengan membangun **banyak pohon keputusan (decision trees)
 
 ---
 
-### ⚙️ Parameter Model yang Digunakan
+###  Parameter Model yang Digunakan
 
 Model dibangun menggunakan **`RandomForestClassifier` dari library `sklearn.ensemble`** dengan parameter sebagai berikut:
 
