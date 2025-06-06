@@ -85,6 +85,8 @@ Berikut adalah deskripsi singkat fitur:
 - `Churn`: Target (Yes/No) — apakah pelanggan berhenti berlangganan
 
 ###  Exploratory Data Analysis (EDA):
+Lampiran Grafik EDA:
+![Screenshot 2025-05-26 223042](https://github.com/user-attachments/assets/13f6f57b-e23b-4ca4-9342-feccb2b68fec)
 
 * **Tidak ada nilai kosong (missing values)** pada sebagian besar kolom berdasarkan hasil `df.isnull().sum()`. Namun, kolom `TotalCharges` bertipe `object` meskipun berisi angka. Setelah dikonversi ke `float`, ditemukan **11 nilai NaN**, yang akan ditangani pada tahap data preparation.
 * **Tidak terdapat duplikat** dalam data.
@@ -162,12 +164,40 @@ df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 
 ---
 
-###  4. **Feature Selection dan Final Dataset**
+###  5. **Feature Selection dan Final Dataset**
 
 * Dataset akhir yang digunakan untuk pelatihan model terdiri atas kombinasi fitur numerik dan hasil encoding fitur kategorikal.
 * Kolom target yang diprediksi adalah `Churn`.
 
 ---
+
+### 6. **Correlation Matrix**
+Lampiran Correlation Matrix:
+![image](https://github.com/user-attachments/assets/f2bc62dd-e116-42c6-8245-8ab284a64263)
+
+* Setelah proses encoding, dilakukan analisis **matriks korelasi (correlation matrix)** untuk mengetahui hubungan antar fitur. Visualisasi seperti heatmap digunakan untuk mengidentifikasi fitur-fitur yang paling berpengaruh, serta untuk mendeteksi multikolinearitas antar fitur.
+
+Berikut adalah detail dari korelasi antar fitur:
+- `gender`: Tingkat korelasi rendah dengan semua fitur
+- `SeniorCitizen`: Tingkat korelasi rendah dengan semua fitur
+- `Partner`: Tingkat korelasi sebesar 0.45 dengan fitur 'Dependents'
+- `Dependents`: Tingkat korelasi sebesar 0.45 dengan fitur 'Partner'
+- `PhoneService`: Tingkat korelasi sebesar 0.68 dengan fitur 'MultipleLines'
+- `MultipleLines`: Tingkat korelasi sebesar 0.68 dengan fitur 'PhoneService'
+- `InternetService`: Tingkat korelasi sebesar 0.72 dengan fitur 'TechSupport' dan 'OnlineSecurity'
+- `OnlineSecurity`: Tingkat korelasi sebesar 0.74 dengan fitur 'TechSupport'
+- `OnlineBackup`: Tingkat korelasi sebesar 0.71 dengan fitur 'TechSupport', 'DeviceProtection', 'MonthlyCharges' dan 'OnlineSecurity'
+- `DeviceProtection`: Tingkat korelasi sebesar 0.75 dengan fitur 'StreamingTV' dan 'StreamingFilm'
+- `TechSupport`: Tingkat korelasi sebesar 0.74 dengan fitur 'OnlineSecurity'
+- `StreamingTV` & `StreamingMovies`: Tingkat korelasi sebesar 0.82 dengan fitur 'MonthlyCharges'
+- `Contract`: Tingkat korelasi sebesar 0.67 dengan fitur 'tenure'
+- `PaymentMethod`: Tingkat korelasi sebesar 0.35 dengan fitur 'Contract'
+- `PaperlessBilling`: Tingkat korelasi sebesar 0.35 dengan fitur 'MonthlyCharges'
+- `tenure`: Tingkat korelasi sebesar 0.83 dengan fitur 'TotalCharges'
+- `MonthlyCharges`: Tingkat korelasi sebesar 0.82 dengan fitur `StreamingTV` & `StreamingMovies`
+- `TotalCharges`: Tingkat korelasi sebesar 0.83 dengan fitur 'tenure'
+- `Churn`: Tingkat korelasi sebesar 0.19 dengan fitur 'MonthlyCharges' dan 'PaperlessBilling'
+
 
 
 ## Modeling
@@ -208,8 +238,21 @@ model.fit(X_train, y_train)
 
 Setelah pelatihan, model digunakan untuk memprediksi data uji (`X_test`) dan dilakukan evaluasi performa menggunakan metrik klasifikasi seperti **accuracy**, **precision**, **recall**, dan **f1-score**.
 
+###  Feature Importance:
+Lampiran Grafik Feature Importance:
+![image](https://github.com/user-attachments/assets/8cb02cfd-f076-4558-8e77-7eafa7830107)
+* Setelah model dilatih, kita dapat mengevaluasi **seberapa besar kontribusi masing-masing fitur** terhadap prediksi churn dengan melihat `feature_importances_`.
+* Fitur dengan nilai importance lebih tinggi memiliki **pengaruh lebih besar** terhadap keputusan model.
+* Hasil ini dirangkum ke dalam dataframe dan diurutkan menurun, kemudian divisualisasikan dalam bentuk horizontal bar chart.
+* Fitur seperti `TotalCharges`, `PaymentMethod`, `Contract`, `tenure`, dan `MonthlyCharges` berada di posisi atas, menunjukkan bahwa:
+
+  * **Biaya total (TotalCharges)** dan **Biaya bulanan (MonthlyCharges)** yang tinggi bisa menjadi faktor risiko churn.
+  * **Jenis kontrak** pelanggan (bulanan, tahunan) sangat memengaruhi kemungkinan churn.
+  * **Lama berlangganan (tenure)** umumnya memiliki korelasi negatif dengan churn (semakin lama, semakin kecil kemungkinan churn).
+  * **Metode pembayaran (PaymentMethod)** model prediksi churn karena metode pembayaran pelanggan dapat merefleksikan preferensi, kebiasaan, dan kemungkinan loyalitas mereka terhadap layanan.
+
 ## Evaluation
-A. Metrik Evaluasi yang Digunakan
+### A. Metrik Evaluasi yang Digunakan
 Dalam proyek prediksi customer churn ini, kami menggunakan empat metrik evaluasi utama untuk mengukur performa model:
 
 1. **Precision**  
@@ -230,25 +273,39 @@ Dalam proyek prediksi customer churn ini, kami menggunakan empat metrik evaluasi
 
 
 
-B. Analisis Hasil Evaluasi
+### B. Analisis Hasil Evaluasi
 
-| Kelas        | Precision | Recall | F1-Score | Support |
-|--------------|-----------|--------|----------|---------|
-| 0            | 0.82      | 0.86   | 0.84     | 1036    |
-| 1            | 0.54      | 0.47   | 0.50     | 373     |
-| Akurasi      | -         | -      | -        | 0.75    |
-| Macro Avg    | 0.68      | 0.66   | 0.67     | -       |  
+| Metrik    | Kelas 0 (No Churn) | Kelas 1 (Churn) |
+| --------- | ------------------ | --------------- |
+| Precision | 0.83               | 0.66            |
+| Recall    | 0.91               | 0.47            |
+| F1-Score  | 0.87               | 0.55            |
+| Support   | 1036               | 373             |
 
-C. Interpretasi:  
-1. **Kelas 0 (No Churn)**  
-   - Precision 82%: Dari semua prediksi "No Churn", 82% benar.  
-   - Recall 86%: Model berhasil mengidentifikasi 86% pelanggan yang tidak churn.  
-   - Performa baik karena kelas ini dominan (73.5% dataset).  
+### C. Interpretasi:  
+####  **Kelas 0 (Tidak Churn):**
 
-2. **Kelas 1 (Churn)**  
-   - Precision 54%: Dari semua prediksi "Churn", hanya 54% yang benar (banyak false positive).  
-   - Recall 47%: Model hanya mendeteksi 47% kasus churn aktual (banyak false negative).  
-   - Masalah utama: Model kesulitan memprediksi kelas minoritas (churn).  
+* **Precision 0.83:** Dari seluruh prediksi "tidak churn", sebanyak 83% benar.
+* **Recall 0.91:** Model berhasil menangkap 91% pelanggan yang memang tidak churn.
+* **F1-score 0.87:** Performa keseluruhan untuk kelas mayoritas sangat baik.
+* Ini wajar karena kelas 0 adalah **kelas dominan (sekitar 73%)**, sehingga model memiliki cukup data untuk belajar mengenalinya.
+
+####  **Kelas 1 (Churn):**
+
+* **Precision 0.66:** Dari semua prediksi "churn", hanya 66% yang benar.
+* **Recall 0.47:** Model hanya berhasil menangkap 47% pelanggan yang benar-benar churn.
+* **F1-score 0.55:** Menunjukkan bahwa model masih **kesulitan mengenali kelas minoritas (churn)** secara akurat.
+
+####  **Akurasi dan Rata-Rata:**
+* **Accuracy 0.79:** Model secara keseluruhan benar memprediksi 79% data.
+* **Macro average:**
+
+  * Rata-rata dari masing-masing kelas tanpa mempertimbangkan proporsi data.
+  * **Recall macro hanya 0.69**, menunjukkan bahwa **kelas minoritas tidak dipelajari dengan baik**.
+* **Weighted average:**
+
+  * Rata-rata yang mempertimbangkan jumlah sampel per kelas.
+  * Nilainya lebih tinggi karena dominasi kelas 0.
 
 
 D. Rekomendasi Perbaikan
