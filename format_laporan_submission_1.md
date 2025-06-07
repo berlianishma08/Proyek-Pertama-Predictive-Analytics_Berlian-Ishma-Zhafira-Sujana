@@ -11,8 +11,7 @@ Customer churn merupakan tantangan kritis di industri telekomunikasi dengan damp
 ### Problem Statements
 
 1. **Tingkat churn pelanggan mencapai 26.5%** dari total pelanggan, yang berdampak signifikan terhadap pendapatan dan pertumbuhan perusahaan.
-2. **Perusahaan mengalami kesulitan dalam mengidentifikasi pelanggan yang berisiko churn secara dini**, sehingga sering terlambat dalam memberikan strategi retensi.
-3. **Data bersifat imbalanced**, dengan distribusi kelas `Churn = No` sebanyak \~73% dan `Churn = Yes` sebanyak \~27%, yang menyebabkan risiko bias pada model terhadap kelas mayoritas.
+2. **Data bersifat imbalanced**, dengan distribusi kelas `Churn = No` sebanyak \~73% dan `Churn = Yes` sebanyak \~27%, yang menyebabkan risiko bias pada model terhadap kelas mayoritas.
 
 ---
 
@@ -53,12 +52,13 @@ Model dievaluasi menggunakan metrik berikut:
 ## Data Understanding
 Sumber Dataset: [Telco Customer Churn] - (https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download)
 
-Fitur:
-- Demografi: gender, SeniorCitizen, Partner, Dependents
-- Layanan: PhoneService, MultipleLines, InternetService
-- Pembayaran: Contract, PaperlessBilling, PaymentMethod
-- Riwayat: tenure, MonthlyCharges, TotalCharges
-- Target: Churn (Yes/No)
+Dataset terdiri dari **7043 baris dan 21 kolom**, yang mencakup berbagai aspek pelanggan seperti:
+
+* **Identitas pelanggan**: `customerID`
+* **Karakteristik demografi**: `gender`, `SeniorCitizen`, `Partner`, `Dependents`
+* **Jenis layanan yang digunakan**: `PhoneService`, `MultipleLines`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`
+* **Informasi langganan dan pembayaran**: `Contract`, `PaymentMethod`, `PaperlessBilling`, `MonthlyCharges`, `TotalCharges`, `tenure`
+* **Kolom target**: `Churn`, yang bernilai `Yes` jika pelanggan churn, dan `No` jika tidak.
 
 Penjelasan Fitur:
 Berikut adalah deskripsi singkat fitur:
@@ -98,6 +98,33 @@ Lampiran Grafik EDA:
     Hal ini menandakan bahwa dataset bersifat **imbalanced**, yang perlu menjadi perhatian khusus dalam proses pelatihan model.
 
 * Beberapa fitur seperti `Contract`, `PaymentMethod`, `InternetService`, dan `OnlineBackup` memiliki **kategori yang berbeda-beda**, yang perlu diubah menjadi representasi numerik menggunakan encoding pada tahap selanjutnya.
+
+### **Correlation Matrix**
+Lampiran Correlation Matrix:
+![image](https://github.com/user-attachments/assets/f2bc62dd-e116-42c6-8245-8ab284a64263)
+
+* Setelah proses encoding, dilakukan analisis **matriks korelasi (correlation matrix)** untuk mengetahui hubungan antar fitur. Visualisasi seperti heatmap digunakan untuk mengidentifikasi fitur-fitur yang paling berpengaruh, serta untuk mendeteksi multikolinearitas antar fitur.
+
+Berikut adalah detail dari korelasi antar fitur:
+- `gender`: Tingkat korelasi rendah dengan semua fitur
+- `SeniorCitizen`: Tingkat korelasi rendah dengan semua fitur
+- `Partner`: Tingkat korelasi sebesar 0.45 dengan fitur 'Dependents'
+- `Dependents`: Tingkat korelasi sebesar 0.45 dengan fitur 'Partner'
+- `PhoneService`: Tingkat korelasi sebesar 0.68 dengan fitur 'MultipleLines'
+- `MultipleLines`: Tingkat korelasi sebesar 0.68 dengan fitur 'PhoneService'
+- `InternetService`: Tingkat korelasi sebesar 0.72 dengan fitur 'TechSupport' dan 'OnlineSecurity'
+- `OnlineSecurity`: Tingkat korelasi sebesar 0.74 dengan fitur 'TechSupport'
+- `OnlineBackup`: Tingkat korelasi sebesar 0.71 dengan fitur 'TechSupport', 'DeviceProtection', 'MonthlyCharges' dan 'OnlineSecurity'
+- `DeviceProtection`: Tingkat korelasi sebesar 0.75 dengan fitur 'StreamingTV' dan 'StreamingFilm'
+- `TechSupport`: Tingkat korelasi sebesar 0.74 dengan fitur 'OnlineSecurity'
+- `StreamingTV` & `StreamingMovies`: Tingkat korelasi sebesar 0.82 dengan fitur 'MonthlyCharges'
+- `Contract`: Tingkat korelasi sebesar 0.67 dengan fitur 'tenure'
+- `PaymentMethod`: Tingkat korelasi sebesar 0.35 dengan fitur 'Contract'
+- `PaperlessBilling`: Tingkat korelasi sebesar 0.35 dengan fitur 'MonthlyCharges'
+- `tenure`: Tingkat korelasi sebesar 0.83 dengan fitur 'TotalCharges'
+- `MonthlyCharges`: Tingkat korelasi sebesar 0.82 dengan fitur `StreamingTV` & `StreamingMovies`
+- `TotalCharges`: Tingkat korelasi sebesar 0.83 dengan fitur 'tenure'
+- `Churn`: Tingkat korelasi sebesar 0.19 dengan fitur 'MonthlyCharges' dan 'PaperlessBilling'
 
 
 ## Data Preparation
@@ -171,32 +198,17 @@ df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 
 ---
 
-### 6. **Correlation Matrix**
-Lampiran Correlation Matrix:
-![image](https://github.com/user-attachments/assets/f2bc62dd-e116-42c6-8245-8ab284a64263)
+### 6. Pembagian Dataset (Train-Test Split)
 
-* Setelah proses encoding, dilakukan analisis **matriks korelasi (correlation matrix)** untuk mengetahui hubungan antar fitur. Visualisasi seperti heatmap digunakan untuk mengidentifikasi fitur-fitur yang paling berpengaruh, serta untuk mendeteksi multikolinearitas antar fitur.
+* Dataset dibagi menjadi data **pelatihan (training)** dan **pengujian (testing)** menggunakan fungsi `train_test_split` dari `sklearn.model_selection`.
+* **Proporsi pembagian** adalah 80% data untuk pelatihan dan 20% untuk pengujian.
+* Parameter `random_state=42` digunakan agar proses pembagian data bersifat **reproducible** (hasil selalu konsisten setiap dijalankan).
 
-Berikut adalah detail dari korelasi antar fitur:
-- `gender`: Tingkat korelasi rendah dengan semua fitur
-- `SeniorCitizen`: Tingkat korelasi rendah dengan semua fitur
-- `Partner`: Tingkat korelasi sebesar 0.45 dengan fitur 'Dependents'
-- `Dependents`: Tingkat korelasi sebesar 0.45 dengan fitur 'Partner'
-- `PhoneService`: Tingkat korelasi sebesar 0.68 dengan fitur 'MultipleLines'
-- `MultipleLines`: Tingkat korelasi sebesar 0.68 dengan fitur 'PhoneService'
-- `InternetService`: Tingkat korelasi sebesar 0.72 dengan fitur 'TechSupport' dan 'OnlineSecurity'
-- `OnlineSecurity`: Tingkat korelasi sebesar 0.74 dengan fitur 'TechSupport'
-- `OnlineBackup`: Tingkat korelasi sebesar 0.71 dengan fitur 'TechSupport', 'DeviceProtection', 'MonthlyCharges' dan 'OnlineSecurity'
-- `DeviceProtection`: Tingkat korelasi sebesar 0.75 dengan fitur 'StreamingTV' dan 'StreamingFilm'
-- `TechSupport`: Tingkat korelasi sebesar 0.74 dengan fitur 'OnlineSecurity'
-- `StreamingTV` & `StreamingMovies`: Tingkat korelasi sebesar 0.82 dengan fitur 'MonthlyCharges'
-- `Contract`: Tingkat korelasi sebesar 0.67 dengan fitur 'tenure'
-- `PaymentMethod`: Tingkat korelasi sebesar 0.35 dengan fitur 'Contract'
-- `PaperlessBilling`: Tingkat korelasi sebesar 0.35 dengan fitur 'MonthlyCharges'
-- `tenure`: Tingkat korelasi sebesar 0.83 dengan fitur 'TotalCharges'
-- `MonthlyCharges`: Tingkat korelasi sebesar 0.82 dengan fitur `StreamingTV` & `StreamingMovies`
-- `TotalCharges`: Tingkat korelasi sebesar 0.83 dengan fitur 'tenure'
-- `Churn`: Tingkat korelasi sebesar 0.19 dengan fitur 'MonthlyCharges' dan 'PaperlessBilling'
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
+---
 
 
 
